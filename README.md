@@ -13,20 +13,20 @@ A real-time dashboard that analyzes news and research related to climate risk an
 
 ## Prerequisites
 
-- Python 3.x
+- Python 3.12
 - pip (Python package installer)
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/VatchalaBakthavatchalu/Climate-risk-insurance-agent.git
 cd Climate-risk-insurance-agent
 ```
 
 2. Create and activate a virtual environment:
 ```bash
-python -m venv venv
+python3.12 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
@@ -36,6 +36,15 @@ pip install -r requirements.txt
 ```
 
 ## API Keys Required
+
+
+### Gemini API Key
+- Model used: `gemini-2.0-flash`
+- Get your API key from: [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+### Tavily API Key
+- Get your API key from: [Tavily API](https://tavily.com/)
+
 
 The application requires two API keys:
 - **Gemini API Key**: For AI-powered analysis
@@ -74,7 +83,7 @@ streamlit run main.py
 
 ## Project Structure
 
-- `main.py`: Main application file with Streamlit interface
+- `app.py`: Main application file with Streamlit interface
 - `utils.py`: Utility functions for fetching and analyzing content
 - `config.py`: Configuration settings and API endpoints
 
@@ -103,13 +112,6 @@ News is categorized into:
 - Error logging in sidebar
 - Graceful handling of failed requests
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-[Add your license information here]
 
 ## Configuration
 
@@ -137,20 +139,5 @@ The application provides an interactive web interface with:
 - Automatic data updates
 - Export capabilities for reports and insights
 
-For macOS:
-```bash
-brew install libxml2 libxslt
-```
-
-For Ubuntu/Debian:
-```bash
-sudo apt-get install python3-dev libxml2-dev libxslt1-dev
-sudo apt-get install libjpeg-dev zlib1g-dev libpng-dev
-```
-
-For Windows:
-- Install Visual C++ Build Tools
-- Install wget
-- The required dependencies should be automatically handled by pip
 
 
