@@ -1,10 +1,13 @@
 import streamlit as st
 from datetime import datetime
+import time
 from utils import fetch_news, analyze_article, format_report, fetch_research_papers
-from config import NEWS_SOURCES, UPDATE_INTERVAL
+from config import NEWS_SOURCES, UPDATE_INTERVAL, CATEGORIES
 
 def filter_by_tag(data, selected_tag):
     """Filter items by tag"""
+    if not data or selected_tag == "All":
+        return data
     return [item for item in data if selected_tag.lower() in 
             [tag.lower() for tag in item.get('analysis', {}).get('key_insights', [])]]
 
@@ -15,10 +18,16 @@ def get_all_tags(articles):
         insights = article.get('analysis', {}).get('key_insights', [])
         for insight in insights:
             tags.add(insight.lower())
-    return sorted(tags)
+    return sorted(list(tags))
 
 def main():
-    st.title("Climate Risk & Insurance News Analyzer")
+    st.set_page_config(
+        page_title="Climate Risk & Insurance Analyzer",
+        page_icon="🌍",
+        layout="wide"
+    )
+    
+    st.title("🌍 Climate Risk & Insurance News Analyzer")
     st.write("Real-time analysis of climate risk and insurance news")
     
     # Initialize session state
@@ -28,98 +37,131 @@ def main():
         st.session_state.reports = []
     if 'all_articles' not in st.session_state:
         st.session_state.all_articles = []
+    if 'error_log' not in st.session_state:
+        st.session_state.error_log = []
 
     # Sidebar configuration
-    st.sidebar.title("Settings")
-    selected_sources = st.sidebar.multiselect(
-        "Select News Sources",
-        options=[s['name'] for s in NEWS_SOURCES],
-        default=[NEWS_SOURCES[0]['name']]
-    )
-    
+    with st.sidebar:
+        st.title("Settings")
+        selected_sources = st.multiselect(
+            "Select News Sources",
+            options=[s['name'] for s in NEWS_SOURCES],
+            default=[NEWS_SOURCES[0]['name']],
+            help="Choose the news sources you want to analyze"
+        )
+        
+        category_filter = st.multiselect(
+            "Filter by Categories",
+            options=CATEGORIES,
+            default=[],
+            help="Select categories to filter news articles"
+        )
+
     # Main content
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        if st.button("Fetch Latest News & Research"):
-            with st.spinner("Analyzing content..."):
+        fetch_button = st.button("🔄 Fetch Latest News & Research", use_container_width=True)
+        if fetch_button:
+            with st.spinner("Fetching and analyzing content..."):
                 all_articles = []
+                errors = []
                 
-                # Fetch and analyze articles from selected sources
-                for source in NEWS_SOURCES:
+                # Progress tracking
+                progress_text = st.empty()
+                progress_bar = st.progress(0)
+                total_sources = len(selected_sources)
+                
+                for idx, source in enumerate(NEWS_SOURCES):
                     if source['name'] in selected_sources:
-                        articles = fetch_news(source)
-                        for article in articles:
-                            analysis = analyze_article(article)
-                            if analysis:
-                                all_articles.append(analysis)
+                        try:
+                            progress_text.text(f"Processing: {source['name']}")
+                            articles = fetch_news(source)
+                            
+                            for article in articles:
+                                analysis = analyze_article(article)
+                                if analysis:
+                                    if not category_filter or analysis['category'] in category_filter:
+                                        all_articles.append(analysis)
+                            
+                            progress = min(1.0, (idx + 1) / total_sources)
+                            progress_bar.progress(progress)
+                            
+                        except Exception as e:
+                            errors.append(f"Error processing {source['name']}: {str(e)}")
                 
-                # Store articles in session state
+                # Clear progress indicators
+                progress_text.empty()
+                progress_bar.empty()
+                
+                # Update session state
                 st.session_state.all_articles = all_articles
-                
-                # Generate report
-                report = format_report(all_articles)
-                st.session_state.reports.append(report)
+                st.session_state.error_log = errors
                 st.session_state.last_update = datetime.now()
-
-    # Tag filtering in sidebar
-    if st.session_state.all_articles:
-        st.sidebar.header("Filter by Topic")
-        all_tags = get_all_tags(st.session_state.all_articles)
-        selected_tag = st.sidebar.selectbox("Select a topic", ["All"] + all_tags)
+                
+                # Show success/error messages
+                if all_articles:
+                    st.success(f"Successfully analyzed {len(all_articles)} articles")
+                if errors:
+                    st.error("Some errors occurred during processing. Check the error log in settings.")
 
     # Display content
     if st.session_state.all_articles:
-        # Filter articles if tag selected
-        display_articles = (st.session_state.all_articles if selected_tag == "All" 
-                          else filter_by_tag(st.session_state.all_articles, selected_tag))
+        display_articles = st.session_state.all_articles
         
         # News Section
-        st.header("News Analysis")
+        st.header("📰 News Analysis")
         for article in display_articles:
-            with st.expander(f"{article['title']} ({article['source']})"):
+            with st.expander(f"📄 {article['title']} ({article['source']})"):
                 col1, col2 = st.columns([2, 1])
                 
                 with col1:
-                    st.write(f"**Category:** {article['category']}")
+                    st.markdown(f"**Category:** `{article['category']}`")
                     
-                    st.write("**Key Insights:**")
+                    st.markdown("**🔍 Key Insights:**")
                     for insight in article['analysis']['key_insights']:
-                        st.write(f"- {insight}")
+                        st.markdown(f"- {insight}")
                     
-                    st.write("**Risks:**")
-                    for risk in article['analysis']['risks_opportunities']['risks']:
-                        st.write(f"- {risk}")
+                    col_risks, col_opps = st.columns(2)
+                    with col_risks:
+                        st.markdown("**⚠️ Risks:**")
+                        for risk in article['analysis']['risks_opportunities']['risks']:
+                            st.markdown(f"- {risk}")
                     
-                    st.write("**Opportunities:**")
-                    for opp in article['analysis']['risks_opportunities']['opportunities']:
-                        st.write(f"- {opp}")
+                    with col_opps:
+                        st.markdown("**💡 Opportunities:**")
+                        for opp in article['analysis']['risks_opportunities']['opportunities']:
+                            st.markdown(f"- {opp}")
                 
                 with col2:
-                    st.metric("Relevance Score", article['analysis']['relevance_score'])
-                    st.write(f"**Source:** [{article['source']}]({article['url']})")
-                    
-                    # Fetch related research papers
-                    if selected_tag != "All":
-                        st.write("**Related Research:**")
-                        papers = fetch_research_papers(selected_tag)
-                        for paper in papers[:2]:  # Show top 2 related papers
-                            st.write(f"- [{paper['title']}]({paper['url']})")
+                    st.metric("Relevance Score", f"{article['analysis']['relevance_score']}/10")
+                    st.markdown(f"**Source:** [{article['source']}]({article['url']})")
+                    st.markdown("---")
+                    st.markdown("**📚 Related Research:**")
+                    papers = fetch_research_papers(article['category'])
+                    for paper in papers[:2]:
+                        st.markdown(f"- [{paper['title']}]({paper['url']})")
 
-    # Stats and info in sidebar
-    if st.session_state.last_update:
-        st.sidebar.markdown("---")
-        st.sidebar.write(f"Last updated: {st.session_state.last_update.strftime('%Y-%m-%d %H:%M:%S')}")
-        if st.session_state.reports:
-            st.sidebar.metric("Articles Analyzed", len(st.session_state.all_articles))
+    # Sidebar stats and info
+    with st.sidebar:
+        if st.session_state.last_update:
+            st.markdown("---")
+            st.markdown("### 📊 Stats")
+            st.write(f"Last updated: {st.session_state.last_update.strftime('%Y-%m-%d %H:%M:%S')}")
+            st.metric("Articles Analyzed", len(st.session_state.all_articles))
             
-    # About section in sidebar
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### About")
-    st.sidebar.info(
-        "This dashboard analyzes news and research related to climate risk and insurance. "
-        "Select topics to filter content and discover related research papers."
-    )
+            if st.session_state.error_log:
+                st.markdown("### ⚠️ Error Log")
+                with st.expander("View Errors"):
+                    for error in st.session_state.error_log:
+                        st.error(error)
+        
+        st.markdown("---")
+        st.markdown("### ℹ️ About")
+        st.info(
+            "This dashboard provides real-time analysis of climate risk and insurance news. "
+            "Select news sources and categories to focus on specific areas of interest."
+        )
 
 if __name__ == "__main__":
     main() 

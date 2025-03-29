@@ -1,6 +1,27 @@
 # InsureTech-Climate-Risk-Agent
 An AI-powered agent platform that analyzes real-time news and climate risk data to provide actionable insights for insurance underwriting decisions.
 
+## Prerequisites
+
+### System Dependencies
+Before installing Python packages, ensure you have the following system dependencies:
+
+For macOS:
+```bash
+brew install libxml2 libxslt
+```
+
+For Ubuntu/Debian:
+```bash
+sudo apt-get install python3-dev libxml2-dev libxslt1-dev
+sudo apt-get install libjpeg-dev zlib1g-dev libpng-dev
+```
+
+For Windows:
+- Install Visual C++ Build Tools
+- Install wget
+- The required dependencies should be automatically handled by pip
+
 ## Quick Start
 
 1. Clone and setup:
@@ -9,7 +30,13 @@ git clone https://github.com/yourusername/InsureTech-Climate-Risk-Agent.git
 cd InsureTech-Climate-Risk-Agent
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m pip install --upgrade pip  # Upgrade pip first
 pip install -r requirements.txt
+```
+
+2. Download required NLTK data:
+```python
+python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger'); nltk.download('wordnet')"
 ```
 
 2. Create `.env` file with your API keys:
