@@ -13,6 +13,7 @@ from config import (
     MAX_RESEARCH_PAPERS, MAX_RSS_ITEMS, RSS_CACHE_TIMEOUT
 )
 from openai import OpenAI
+import streamlit as st
 
 # Initialize NLTK
 def initialize_nltk():
@@ -29,11 +30,23 @@ initialize_nltk()
 # RSS feed cache
 rss_cache: Dict[str, Dict[str, Any]] = {}
 
-# Initialize OpenAI client
-client = OpenAI(
-    api_key=GEMINI_API_KEY,
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai"
-)
+def get_openai_client():
+    """Get OpenAI client with current API key"""
+    # Try getting key from session state first
+    if hasattr(st, 'session_state') and 'gemini_key' in st.session_state:
+        api_key = st.session_state.gemini_key
+    else:
+        # Fallback to config
+        from config import GEMINI_API_KEY
+        api_key = GEMINI_API_KEY
+    
+    if not api_key:
+        return None
+        
+    return OpenAI(
+        api_key=api_key,
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai"
+    )
 
 def clean_html(html_text: str) -> str:
     """Clean HTML content from text"""
@@ -138,6 +151,11 @@ def fetch_news(source: Dict[str, Any]) -> List[Dict[str, Any]]:
 def analyze_article(article: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Analyze article using AI"""
     try:
+        client = get_openai_client()
+        if not client:
+            st.error("API client not initialized. Please check your API keys.")
+            return None
+            
         # Simplified prompt to reduce JSON parsing errors
         response = client.chat.completions.create(
             model="gemini-2.0-flash",
@@ -210,6 +228,9 @@ def analyze_article(article: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                 print(f"Problematic content: {content}")
                 return None
                 
+    except ValueError as ve:
+        # Handle API key configuration error quietly
+        return None
     except Exception as e:
         print(f"Error analyzing article '{article['title']}': {str(e)}")
         return None

@@ -7,8 +7,10 @@ load_dotenv()
 
 
 # API Configuration
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY') # Make sure this is set in your .env file
-TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
+if 'GEMINI_API_KEY' not in globals():
+    GEMINI_API_KEY = None
+if 'TAVILY_API_KEY' not in globals():
+    TAVILY_API_KEY = None
 
 # News sources for climate risk and insurance
 NEWS_SOURCES = [

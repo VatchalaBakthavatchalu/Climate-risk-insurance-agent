@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime
 import time
 from utils import fetch_news, analyze_article, format_report, fetch_research_papers
-from config import NEWS_SOURCES, UPDATE_INTERVAL, CATEGORIES
+from config import NEWS_SOURCES, UPDATE_INTERVAL, CATEGORIES, GEMINI_API_KEY, TAVILY_API_KEY
 
 def filter_by_tag(data, selected_tag):
     """Filter items by tag"""
@@ -39,10 +39,33 @@ def main():
         st.session_state.all_articles = []
     if 'error_log' not in st.session_state:
         st.session_state.error_log = []
+    if 'gemini_key' not in st.session_state:
+        st.session_state.gemini_key = ""
+    if 'tavily_key' not in st.session_state:
+        st.session_state.tavily_key = ""
 
     # Sidebar configuration
     with st.sidebar:
         st.title("Settings")
+        
+        # API Key Configuration
+        st.subheader("🔑 API Configuration")
+        gemini_key = st.text_input("Gemini API Key", type="password", value=st.session_state.gemini_key)
+        tavily_key = st.text_input("Tavily API Key", type="password", value=st.session_state.tavily_key)
+        
+        # Debug information (you can remove this later)
+        st.write("Debug: Keys configured:", bool(gemini_key), bool(tavily_key))
+        
+        # Update session state and config
+        if gemini_key != st.session_state.gemini_key or tavily_key != st.session_state.tavily_key:
+            st.session_state.gemini_key = gemini_key
+            st.session_state.tavily_key = tavily_key
+            import config
+            config.GEMINI_API_KEY = gemini_key
+            config.TAVILY_API_KEY = tavily_key
+        
+        st.markdown("---")
+        
         selected_sources = st.multiselect(
             "Select News Sources",
             options=[s['name'] for s in NEWS_SOURCES],
@@ -61,7 +84,13 @@ def main():
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        fetch_button = st.button("🔄 Fetch Latest News & Research", use_container_width=True)
+        # Show warning if keys are not configured
+        if not st.session_state.gemini_key or not st.session_state.tavily_key:
+            st.warning("⚠️ Please configure your API keys in the sidebar before fetching data.")
+            
+        fetch_button = st.button("🔄 Fetch Latest News & Research", 
+                               use_container_width=True,
+                               disabled=not (st.session_state.gemini_key and st.session_state.tavily_key))
         if fetch_button:
             with st.spinner("Fetching and analyzing content..."):
                 all_articles = []
