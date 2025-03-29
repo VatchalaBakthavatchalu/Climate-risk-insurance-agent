@@ -26,18 +26,17 @@ For Windows:
 
 1. Clone and setup:
 ```bash
-git clone https://github.com/yourusername/InsureTech-Climate-Risk-Agent.git
+git clone https://github.com/VatchalaBakthavatchalu/Climate-risk-insurance-agent.git
 cd InsureTech-Climate-Risk-Agent
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 python -m pip install --upgrade pip  # Upgrade pip first
+
+
+
 pip install -r requirements.txt
 ```
 
-2. Download required NLTK data:
-```python
-python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger'); nltk.download('wordnet')"
-```
 
 2. Create `.env` file with your API keys:
 ```
