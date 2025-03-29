@@ -122,22 +122,5 @@ The application can be configured by modifying `config.py`:
 - Update intervals
 - Maximum number of articles/papers to process
 
-## API Requirements
-
-The application requires the following API keys:
-- Google Gemini API key for AI-powered analysis
-- Tavily API key for web search capabilities
-
-Make sure to keep your API keys secure and never commit them to version control.
-
-## Streamlit Features
-
-The application provides an interactive web interface with:
-- Real-time data visualization
-- Interactive filters and controls
-- Responsive dashboard layout
-- Automatic data updates
-- Export capabilities for reports and insights
-
 
 
